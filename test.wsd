@@ -1,0 +1,22 @@
+@startuml
+package "Data Processing" {
+  [Excel Reader]
+  [Data Parser]
+}
+
+package "Visualization" {
+  [Chart Generator]
+
+
+package "Main Interface" {
+  [CLI]
+  [Optional GUI]
+}
+
+[Excel Reader] --> [Data Parser]
+[Data Parser] --> [Chart Generator]
+[CLI] --> [Excel Reader]
+[CLI] --> [Chart Generator]
+[Optional GUI] --> [Excel Reader]
+[Optional GUI] --> [Chart Generator]
+@enduml
