@@ -20,6 +20,22 @@ def read_excel(file_path):
         return data
     except Exception as e:
         raise ValueError(f"Ошибка при чтении файла: {e}")
+    
+def extract_info(data, start_row=1, step=2, max_rows=7):
+    '''Выделяем основную информацию об ученике и возвращаем список'''
+    ws = data.active
+    info = {}
+    for row in range(start_row, max_rows + start_row, step):
+        key_cell = ws[f"A{row}"]
+        value_cell = ws[f"A{row+1}"]
+
+        # Извлекаем данные из ячеек
+        key = key_cell.value[:-1] if key_cell.value and isinstance(key_cell.value, str) else None
+        value = value_cell.value if value_cell.value is not None else None
+
+        if key:
+            info[key] = value
+    return info
 
 def main():
     # Проверяем существование папки

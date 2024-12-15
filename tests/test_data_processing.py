@@ -40,6 +40,60 @@ class TestDataProcessing(unittest.TestCase):
         mock_read_excel.side_effect = Exception("Файл поврежден")
         with self.assertRaises(ValueError):
             read_excel(self.invalid_file_folder)
+    
+class TestExtractInfo(unittest.TestCase):
+    def setUp(self):
+        self.workbook = xl.Workbook()
+        self.sheet = self.workbook.active
+
+    def test_basic_case(self):
+        '''Тестируем корректное извлечение информации.'''
+        self.sheet["A1"] = "Организация:"
+        self.sheet["A2"] = "Хогвардс"
+        self.sheet["A3"] = "Обучающийся:"
+        self.sheet["A4"] = "Гарри Владимирович Поттер"
+        self.sheet["A5"] = "Класс:"
+        self.sheet["A6"] = "Выпускной"
+        self.sheet["A7"] = "Период:"
+        self.sheet["A8"] = "Расцвет римской империи"
+
+        expected = {"Организация": "Хогвардс", "Обучающийся": "Гарри Владимирович Поттер",
+                    "Класс": "Выпускной", "Период": "Расцвет римской империи"}
+        
+        result = extract_info(self.workbook)
+        self.assertEqual(result, expected)
+    
+    def test_empty_cells(self):
+        '''Тестируем случай, когда ячейки пусты.'''
+        self.sheet["A1"] = "Организация:"
+        self.sheet["A2"] = "Хогвардс"
+        self.sheet["A3"] = "Обучающийся:"
+        self.sheet["A4"] = "Гарри Владимирович Поттер"
+        self.sheet["A5"] = "Класс:"
+        self.sheet["A6"] = None
+        self.sheet["A7"] = None
+        self.sheet["A8"] = None
+
+        expected = {"Организация": "Хогвардс", "Обучающийся": "Гарри Владимирович Поттер",
+                    "Класс": None}
+        result = extract_info(self.workbook)
+        self.assertEqual(result, expected)
+
+    def test_invalid_cells(self):
+        '''Тестируем случай, когда ключи или значения отсутствуют'''
+        self.sheet["A1"] = None
+        self.sheet["A2"] = "Хогвардс"
+        self.sheet["A3"] = "Обучающийся:"
+        self.sheet["A4"] = "Гарри Владимирович Поттер"
+        self.sheet["A5"] = None
+        self.sheet["A6"] = None
+        self.sheet["A7"] = None
+        self.sheet["A8"] = None
+
+        expected = {"Обучающийся": "Гарри Владимирович Поттер"}
+        result = extract_info(self.workbook)
+        self.assertEqual(result, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
