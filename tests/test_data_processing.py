@@ -1,8 +1,10 @@
 import unittest
 import os
 import openpyxl as xl
+from datetime import datetime
 from src.data_processing import *
 from unittest.mock import patch, MagicMock
+from unittest.mock import Mock
 
 class TestDataProcessing(unittest.TestCase):
     def setUp(self):
@@ -60,7 +62,7 @@ class TestExtractInfo(unittest.TestCase):
         expected = {"Организация": "Хогвардс", "Обучающийся": "Гарри Владимирович Поттер",
                     "Класс": "Выпускной", "Период": "Расцвет римской империи"}
         
-        result = extract_info(self.workbook)
+        result = extract_info(self.sheet)
         self.assertEqual(result, expected)
     
     def test_empty_cells(self):
@@ -76,7 +78,7 @@ class TestExtractInfo(unittest.TestCase):
 
         expected = {"Организация": "Хогвардс", "Обучающийся": "Гарри Владимирович Поттер",
                     "Класс": None}
-        result = extract_info(self.workbook)
+        result = extract_info(self.sheet)
         self.assertEqual(result, expected)
 
     def test_invalid_cells(self):
@@ -91,9 +93,138 @@ class TestExtractInfo(unittest.TestCase):
         self.sheet["A8"] = None
 
         expected = {"Обучающийся": "Гарри Владимирович Поттер"}
-        result = extract_info(self.workbook)
+        result = extract_info(self.sheet)
         self.assertEqual(result, expected)
 
+class TestExtractSubjects(unittest.TestCase):
+    def setUp(self):
+        self.workbook = xl.Workbook()
+        self.sheet = self.workbook.active
+
+    def test_basic_case(self):
+        '''Тестируем корректное извлечение информации.'''
+        self.sheet["A1"] = 'Изобразительное искусство'
+        self.sheet["A2"] = "Иностранный язык"
+        self.sheet["A3"] = "Литературное чтение"
+        self.sheet["A4"] = "Математика"
+        self.sheet["A5"] = "Музыка"
+        self.sheet["A6"] = "Окружающий мир"
+        self.sheet["A7"] = None
+
+        expected = {1: 'Изобразительное искусство',
+                    2: "Иностранный язык",
+                    3: "Литературное чтение",
+                    4: "Математика",
+                    5: "Музыка",
+                    6: "Окружающий мир"}
+        result = extract_subjects(self.sheet, 1)
+        self.assertEqual(result, expected)
+
+    def test_empty_cells(self):
+        '''Тестируем случай пустых данных'''
+        self.sheet["A1"] = None
+        self.sheet["A2"] = None
+        self.sheet["A3"] = None
+        self.sheet["A4"] = None
+        self.sheet["A5"] = None
+        self.sheet["A6"] = None
+        self.sheet["A7"] = None
+
+        expected = {}
+        result = extract_subjects(self.sheet, 0)
+        self.assertEqual(result, expected)
+
+class TestExtractMarks(unittest.TestCase):
+    def setUp(self):
+        self.worksheet = Mock()
+        self.subjects = {1: "Math", 2: "Physics"}
+
+    def test_basic_marks_extraction(self):
+        self.worksheet.iter_cols.return_value = [
+            (datetime(2023, 1, 1), "5", "4"),
+            (datetime(2023, 1, 2), "4", "3")
+        ]
+        
+        expected = {
+            "Math": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "5"},
+                {"Дата": datetime(2023, 1, 2), "Отметка": "4"}
+            ],
+            "Physics": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "4"},
+                {"Дата": datetime(2023, 1, 2), "Отметка": "3"}
+            ]
+        }
+        
+        result = extract_marks(self.worksheet, self.subjects)
+        self.assertEqual(result, expected)
+
+    def test_multiple_marks_same_day(self):
+        self.worksheet.iter_cols.return_value = [
+            (datetime(2023, 1, 1), "54", "43")
+        ]
+        
+        expected = {
+            "Math": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "5"},
+                {"Дата": datetime(2023, 1, 1), "Отметка": "4"}
+            ],
+            "Physics": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "4"},
+                {"Дата": datetime(2023, 1, 1), "Отметка": "3"}
+            ]
+        }
+        
+        result = extract_marks(self.worksheet, self.subjects)
+        self.assertEqual(result, expected)
+
+    def test_non_numeric_marks(self):
+        self.worksheet.iter_cols.return_value = [
+            (datetime(2023, 1, 1), "н5", "4б")
+        ]
+        
+        expected = {
+            "Math": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "5"}
+            ],
+            "Physics": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "4"}
+            ]
+        }
+        
+        result = extract_marks(self.worksheet, self.subjects)
+        self.assertEqual(result, expected)
+
+    def test_итог_column(self):
+        self.worksheet.iter_cols.return_value = [
+            (datetime(2023, 1, 1), "5", "4"),
+            ("Итог:", "5", "4")
+        ]
+        
+        expected = {
+            "Math": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "5"}
+            ],
+            "Physics": [
+                {"Дата": datetime(2023, 1, 1), "Отметка": "4"}
+            ]
+        }
+        
+        result = extract_marks(self.worksheet, self.subjects)
+        self.assertEqual(result, expected)
+
+    def test_empty_marks(self):
+        self.worksheet.iter_cols.return_value = [
+            (datetime(2023, 1, 1), "", None)
+        ]
+        
+        expected = {
+            "Math": [],
+            "Physics": []
+        }
+        
+        result = extract_marks(self.worksheet, self.subjects)
+        self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()
