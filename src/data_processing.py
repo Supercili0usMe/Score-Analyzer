@@ -74,7 +74,7 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
     
     Аргументы:
         `worksheet`: Лист Excel
-        `subjects`: словарь предметов, получаемый в результате работы функции `extract_subjects`
+        `subjects`: Словарь предметов, получаемый в результате работы функции `extract_subjects`
         `start_row`: Строка, с которой начинается изъятие (default: 10)
         `start_column`: Столбец, с которого начинает осмотр оценок (default: 2)
     
@@ -104,6 +104,26 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
                     if ch.isdigit():
                         marks[subjects[subj_id+1]].append({"Дата": date, "Отметка": ch})
     return marks
+
+def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:
+    """
+    Выделяем из словаря отметок массив дат и массив оценок
+    
+    Аргументы:
+        `marks`: Словарь отметок, получаемый в результате выполнения функции `refactor_marks`
+        `subject`: Строка - название получаемого предмета
+    
+    Возвращает:
+        Два массива: [dates] и [marks], отвечающие за даты и отметки соответственно 
+    
+    Важно:
+        Если в один день по одному предмету больше 1 отметки, то записывается каждая из отметок и каждая дата
+    """
+    dates, grades = [], []
+    for info in marks[subject]:
+        dates.append(info["Дата"])
+        grades.append(info["Отметка"])
+    return dates, grades
 
 def main():
     # Проверяем существование папки

@@ -226,5 +226,53 @@ class TestExtractMarks(unittest.TestCase):
         result = extract_marks(self.worksheet, self.subjects)
         self.assertEqual(result, expected)
 
+class TestRefactorMarks(unittest.TestCase):
+    def setUp(self):
+        self.test_marks = {
+            "Math": [
+                {"Дата": datetime(2023, 9, 1), "Отметка": "5"},
+                {"Дата": datetime(2023, 9, 1), "Отметка": "4"},
+                {"Дата": datetime(2023, 9, 2), "Отметка": "3"}
+            ],
+            "Physics": [
+                {"Дата": datetime(2023, 9, 1), "Отметка": "4"}
+            ],
+            "Chemistry": []
+        }
+
+    def test_valid_subject_multiple_marks(self):
+        dates, grades = refactor_marks(self.test_marks, "Math")
+        self.assertEqual(len(dates), 3)
+        self.assertEqual(len(grades), 3)
+        self.assertEqual(grades, ["5", "4", "3"])
+        self.assertEqual(dates, [
+            datetime(2023, 9, 1),
+            datetime(2023, 9, 1),
+            datetime(2023, 9, 2)
+        ])
+
+    def test_valid_subject_single_mark(self):
+        dates, grades = refactor_marks(self.test_marks, "Physics")
+        self.assertEqual(len(dates), 1)
+        self.assertEqual(len(grades), 1)
+        self.assertEqual(grades, ["4"])
+        self.assertEqual(dates, [datetime(2023, 9, 1)])
+
+    def test_empty_marks_list(self):
+        dates, grades = refactor_marks(self.test_marks, "Chemistry")
+        self.assertEqual(len(dates), 0)
+        self.assertEqual(len(grades), 0)
+        self.assertEqual(grades, [])
+        self.assertEqual(dates, [])
+
+    def test_nonexistent_subject(self):
+        with self.assertRaises(KeyError):
+            refactor_marks(self.test_marks, "Biology")
+
+    def test_empty_marks_dict(self):
+        empty_marks = {}
+        with self.assertRaises(KeyError):
+            refactor_marks(empty_marks, "Math")
+
 if __name__ == "__main__":
     unittest.main()
