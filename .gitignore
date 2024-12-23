@@ -1,6 +1,4 @@
 .gitignore
 .env
 rwuioegh
-./data/Отметки_1.xlsx
-./data/Отметки_2.xlsx
-./data/Отметки_3.xlsx
+data/
