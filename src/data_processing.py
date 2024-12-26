@@ -4,7 +4,23 @@ import openpyxl
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 folder_root = os.path.join(project_root, 'data')
-
+coeffs = {
+    "Административная контрольная работа": 1.5,     "Аудирование": 1.4,
+    "Ведение тетради": 1,                           "Дистанционное занятие": 1,
+    "Дифференцированный зачет": 1,                  "Домашнее задание": 1,
+    "Домашнее сочинение": 1.4,                      "Зачёт": 1.5,
+    "Изложение": 1.4,                               "Инструктаж": 1,
+    "Квалификационное испытание": 1,                "Классное сочинение": 1.5,
+    "Классное сочинение": 1.5,                      "Контрольная практическая работа": 1.5,
+    "Контрольная работа": 1.5,                      "Контрольный диктант": 1.5,
+    "Курсовая работа": 1,                           "Лабораторная работа": 1.3,
+    "Практическая работа": 1.3,                     "Проверочная работа": 1.3,
+    "Проект": 1,                                    "Работа на занятии": 1,
+    "Работа на уроке": 1,                           "Самостоятельная работа": 1.2,
+    "Словарный диктант": 1.4,                       "Сочинение": 1,
+    "Срезовая работа": 1.3,                         "Тест": 1,
+    "Чтение наизусть": 1,                           "Электронное обучение": 1,
+}
 
 def get_file_path(file_name: str, base_folder: str) -> str:
     '''Возвращает полный путь к файлу, если он существует в указанной папке'''
@@ -79,8 +95,8 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
         `start_column`: Столбец, с которого начинает осмотр оценок (default: 2)
     
     Возвращает:
-        Словарь вида `{subj: [{"дата": date, "отметка": mark}]}`, где subj - название предмета,
-        date - дата получения отметки, mark - сама отметка. 
+        Словарь вида `{subj: [{"дата": date, "отметка": mark, "Тип работы": type, "Коэффициент": coeff}]}`, где subj - название предмета,
+        date - дата получения отметки, mark - сама отметка, type - тип полученной отметки, coeff - коэффициент отметки.
     
     Важно:
         Если в один день по одному предмету больше 1 отметки, то записывается каждая из отметок
@@ -92,17 +108,33 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
     start_row = 10
     start_column = 2
 
-    # Проходимся по колонкам
-    for value in worksheet.iter_cols(min_row=start_row, max_row=start_row+len(subjects.values()), min_col=start_column, values_only=True):
+    for value in worksheet.iter_cols(min_row=start_row, max_row=start_row+len(subjects), min_col=start_column):
         # Забираем дату из первой строки
-        date = value[0]
+        date = value[0].value
         if date == "Итог:": break
+
         # Проходимся по остальным строкам
-        for subj_id, mark in enumerate(value[1:]):
-            if mark:
-                for ch in mark:
-                    if ch.isdigit():
-                        marks[subjects[subj_id+1]].append({"Дата": date, "Отметка": ch})
+        for subj_id, cell in enumerate(value[1:]):
+            # Если ячейка пустая - пропускаем
+            if cell is None or not cell.value or not cell.comment:
+                continue
+            # Проходимся по всем отметкам и комментариям одновременно
+            for mark, comment in zip(cell.value, cell.comment.text.strip().split(";")):
+                # Если символ не числа - пропускаем
+                if not mark.isdigit():
+                    continue
+                # Выделяем комментарии
+                comment = comment.strip()
+                # Получаем тип отметки и саму отметку
+                if comment:
+                    _, work_type, _ = comment.split(" - ")
+                    mark_data = {
+                        "Дата": date, 
+                        "Отметка": int(mark),
+                        "Тип работы": work_type,
+                        "Коэффициент": coeffs[work_type]
+                    }
+                marks[subjects[subj_id+1]].append(mark_data)
     return marks
 
 def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:
@@ -114,16 +146,17 @@ def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:
         `subject`: Строка - название получаемого предмета
     
     Возвращает:
-        Два массива: [dates] и [marks], отвечающие за даты и отметки соответственно 
+        Три массива: [dates], [marks] и [coeffs], отвечающие за даты, отметки и коэффициенты соответственно 
     
     Важно:
         Если в один день по одному предмету больше 1 отметки, то записывается каждая из отметок и каждая дата
     """
-    dates, grades = [], []
+    dates, grades, coeffs = [], [], []
     for info in marks[subject]:
         dates.append(info["Дата"])
         grades.append(info["Отметка"])
-    return dates, grades
+        coeffs.append(info["коэффициент"])
+    return dates, grades, coeffs
 
 def main():
     # Проверяем существование папки
