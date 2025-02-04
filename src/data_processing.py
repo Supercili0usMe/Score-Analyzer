@@ -1,4 +1,4 @@
-import os
+import os, re
 
 from openpyxl import load_workbook, Workbook
 
@@ -114,29 +114,34 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
         # Забираем дату из первой строки
         date = value[0].value
         if date == "Итог:": break
-
         # Проходимся по остальным строкам
         for subj_id, cell in enumerate(value[1:]):
             # Если ячейка пустая - пропускаем
-            if cell is None or not cell.value or not cell.comment:
+            if cell is None or not cell.value:
                 continue
-            # Проходимся по всем отметкам и комментариям одновременно
-            for mark, comment in zip(cell.value, cell.comment.text.strip().split(";")):
-                # Если символ не числа - пропускаем
-                if not mark.isdigit():
-                    continue
-                # Выделяем комментарии
-                comment = comment.strip()
-                # Получаем тип отметки и саму отметку
-                if comment:
-                    _, work_type, _ = comment.split(" - ")
-                    mark_data = {
-                        "Дата": date, 
-                        "Отметка": int(mark),
-                        "Тип работы": work_type,
-                        "Коэффициент": coeffs[work_type]
-                    }
-                marks[subjects[subj_id+1]].append(mark_data)
+
+            try:
+                comment_part = cell.comment.text.strip()
+                comments = re.split(r';\s*(?=\S+ - )', comment_part)
+                # Проходимся по всем отметкам и комментариям одновременно
+                for mark, comment in zip(cell.value, comments):
+                    # Если символ не числа - пропускаем
+                    if not mark.isdigit():
+                        continue
+                    # Выделяем комментарии
+                    comment = comment.strip()
+                    # Получаем тип отметки и саму отметку
+                    if comment:
+                        _, work_type, _ = comment.split(" - ")
+                        mark_data = {
+                            "Дата": date, 
+                            "Отметка": int(mark),
+                            "Тип работы": work_type,
+                            "Коэффициент": coeffs[work_type]
+                        }
+                    marks[subjects[subj_id+1]].append(mark_data)
+            except Exception:
+                return Exception
     return marks
 
 def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:
