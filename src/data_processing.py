@@ -11,7 +11,7 @@ coeffs = {
     "Домашнее сочинение": 1.4,                      "Зачёт": 1.5,
     "Изложение": 1.4,                               "Инструктаж": 1,
     "Квалификационное испытание": 1,                "Классное сочинение": 1.5,
-    "Контрольная практическая работа": 1.5,
+    "Контрольная практическая работа": 1.5,         "Работа над ошибками": 1,
     "Контрольная работа": 1.5,                      "Контрольный диктант": 1.5,
     "Курсовая работа": 1,                           "Лабораторная работа": 1.3,
     "Практическая работа": 1.3,                     "Проверочная работа": 1.3,
@@ -119,7 +119,6 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
             # Если ячейка пустая - пропускаем
             if cell is None or not cell.value:
                 continue
-
             try:
                 comment_part = cell.comment.text.strip()
                 comments = re.split(r';\s*(?=\S+ - )', comment_part)
@@ -140,8 +139,8 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
                             "Коэффициент": coeffs[work_type]
                         }
                     marks[subjects[subj_id+1]].append(mark_data)
-            except Exception:
-                return Exception
+            except AttributeError:
+                return True
     return marks
 
 def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:

@@ -53,11 +53,15 @@ def main():
         worksheet = getWorksheet(fileName)
         subjects = d.extract_subjects(worksheet)
         allMarks = d.extract_marks(worksheet, subjects)
+        if allMarks:
+            print("\033[1;91mВ вашем файле отсутствуют комментарии к отметкам, их наличие критически важно\033[0m")
+            return
         printInfo(worksheet, subjects, allMarks)
         subForGraph = input('\nГрафик изменения среднего балла какого предмета нарисовать (если не надо рисовать, то нажмите enter) ')
         drawGraph(subForGraph, subjects, allMarks)
-    except:
-        print("\033[31m\033[1;91mУ вас какой-то поломанный файл, попробуйте другой\033[0m")
+    except TypeError:
+        print("\033[31m\033[1;91mПроизошла непредвиденная ошибка, пожалуйста повторите запрос\033[0m")
+
 
 if __name__ == '__main__':
     main()
