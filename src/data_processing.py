@@ -140,7 +140,7 @@ def extract_marks(worksheet, subjects: dict, start_row=10, start_column=2) -> di
                         }
                     marks[subjects[subj_id+1]].append(mark_data)
             except AttributeError:
-                return True
+                return ""
     return marks
 
 def refactor_marks(marks: dict, subject: str) -> tuple[list, list]:

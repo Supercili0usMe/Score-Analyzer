@@ -53,7 +53,7 @@ def main():
         worksheet = getWorksheet(fileName)
         subjects = d.extract_subjects(worksheet)
         allMarks = d.extract_marks(worksheet, subjects)
-        if allMarks:
+        if allMarks == "":
             print("\033[1;91mВ вашем файле отсутствуют комментарии к отметкам, их наличие критически важно\033[0m")
             return
         printInfo(worksheet, subjects, allMarks)
