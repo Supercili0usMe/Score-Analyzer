@@ -1,6 +1,7 @@
 import data_processing as d
 import visualization as v
 from openpyxl import load_workbook
+from collections import defaultdict
 
 def getWorksheet(fileName):
     filePath = d.get_file_path(fileName, d.folder_root)
@@ -29,10 +30,34 @@ def printInfo(worksheet, subjects, allMarks):
     print(f'___________________________\nСреднее всех средних баллов - {v.setColorOfScore(totalScore)}{totalScore}{'\033[0m'}')
     print(f'Итого: {v.totalEst[0]} пятёрок; {v.totalEst[1]} четверок; {v.totalEst[2]} троек; {v.totalEst[3]} двоек; {v.totalEst[4]} единиц; не хватает оценок у {len(subjects) - sum(v.totalEst)} предметов')
 
+def process_grades(grades, dates):
+    # Группируем оценки по датам
+    date_to_grades = defaultdict(list)
+    for date, grade in zip(dates, grades):
+        date_to_grades[date].append(grade)
+
+    # Сохраняем уникальные даты в порядке их первого появления
+    unique_dates = []
+    seen_dates = set()
+    for date in dates:
+        if date not in seen_dates:
+            unique_dates.append(date)
+            seen_dates.add(date)
+
+    # Вычисляем средние оценки для каждой даты
+    avg_grades = []
+    for date in unique_dates:
+        grades_list = date_to_grades[date]
+        average = sum(grades_list) / len(grades_list)
+        avg_grades.append(average)
+
+    return avg_grades, unique_dates
+
 def drawGraph(subForGraph, subjects, allMarks):
     if subForGraph in subjects.values():
         scores = v.extractScoreMass(subForGraph, allMarks)
         dates = d.refactor_marks(allMarks, subForGraph)[0]
+        scores, dates = process_grades(scores, dates)
         if len(scores) <= 1:
             print(f'{'\033[31m'}Слишком мало оценок для отрисовки графика{'\033[0m'}')
             exit()
