@@ -57,7 +57,7 @@ def countMean(subject, allMarks, period):
         marks[i] = marks[i] * coeffs[i]
 
     score = round(sum(marks) / sum(coeffs), 2)
-    roundScore = round(score)
+    roundScore = round(score + 0.01)
     if len(marks) < minNumOfEstimates:
         return f'{subject} - {score} ~ {roundScore} (не хватает {minNumOfEstimates - len(marks)} оценок)'
     else:
@@ -94,7 +94,6 @@ def drawGraph(subject: str, scores: list, dates: list):
     """
     from datetime import datetime as dt
     from matplotlib import pyplot as plt
-    from screeninfo import get_monitors
     dates = [dt.strptime(i, '%d.%m.%Y') for i in dates]
     dates = [f'{str(i.day).zfill(2)}.{str(i.month).zfill(2)}' for i in dates]
     plt.title(f'График изменения среднего балла по предмету\n{subject}')
@@ -108,7 +107,7 @@ def drawGraph(subject: str, scores: list, dates: list):
         if minLim <= i <= maxLim:
             plt.axhline(y=i, color=colors[[1.5, 2.5, 3.5, 4.5].index(i)], linestyle='--')
 
-    numberOfDates = len(dates)
+    numberOfDates = len(list(set(dates))) # убираем повторяющиеся даты
     plt.xticks(rotation=-70, fontsize=10)
     if numberOfDates > 20:
         plt.xticks(fontsize=8)
@@ -116,16 +115,15 @@ def drawGraph(subject: str, scores: list, dates: list):
     plt.grid()
     if numberOfDates > 10:
         if numberOfDates <= 15:
-            size = 200
+            size = (9.6, 5.4)
         elif numberOfDates <= 30:
-            size = 180
+            size = (10.66, 6.0)
         elif 30 < numberOfDates < 40:
-            size = 150
+            size = (12.8, 7.2)
         else:
-            size = 120
+            size = (16, 9)
         figure = plt.gcf()
-        monitor = get_monitors()[0] # получаем информацию о мониторе
-        figure.set_size_inches(monitor.width/size, monitor.height/size)
+        figure.set_size_inches(size)
     plt.savefig('../data/graph.png', bbox_inches='tight')
     plt.show()
 
