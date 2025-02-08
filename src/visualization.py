@@ -107,7 +107,7 @@ def drawGraph(subject: str, scores: list, dates: list):
         if minLim <= i <= maxLim:
             plt.axhline(y=i, color=colors[[1.5, 2.5, 3.5, 4.5].index(i)], linestyle='--')
 
-    numberOfDates = len(list(set(dates))) # убираем повторяющиеся даты
+    numberOfDates = len(dates)
     plt.xticks(rotation=-70, fontsize=10)
     if numberOfDates > 20:
         plt.xticks(fontsize=8)
